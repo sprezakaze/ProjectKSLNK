@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Mvc;
 using webapi.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,34 +15,30 @@ namespace webapi.Controllers
         }
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Clothing>>> GetClothes()
-        {
-            if(_dbContext.Clothings == null) 
-            {
-                return NotFound();
-            }
-            return await _dbContext.Clothings.ToListAsync();
-        }
+            => Ok(await _dbContext.Clothings.Include(el => el.Category).ToListAsync());
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Clothing>> GetClothing(int id)
         {
-            if (_dbContext.Clothings == null)
-            {
-                return NotFound();
-            }
-            var clothing = await _dbContext.Clothings.FindAsync(id);
+            var clothing = await _dbContext.Clothings
+                .Include(el => el.Category)
+                .FirstOrDefaultAsync(el => el.ClothingId == id);
+
             if (clothing == null)
             {
                 return NotFound();
             }
             return clothing;
         }
+        
         [HttpPost]
         public async Task<ActionResult<Clothing>> PostClothing(Clothing clothing)
         {
-            _dbContext.Clothings.Add(clothing);
+            await _dbContext.Clothings.AddAsync(clothing);
             await _dbContext.SaveChangesAsync();
             return CreatedAtAction(nameof(GetClothes), new { id = clothing.ClothingId }, clothing);
         }
+
         [HttpPut]
         public async Task<IActionResult> PutClothing(int id, Clothing clothing)
         {
@@ -93,6 +84,5 @@ namespace webapi.Controllers
             await _dbContext.SaveChangesAsync();
             return Ok();
         }
-
     }
 }
